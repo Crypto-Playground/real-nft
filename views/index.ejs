@@ -61,7 +61,7 @@
           result.innerText = data.owns ? "Yes." : "Nope."
         } else {
           console.log(data);
-          alert(`Sorry, but something went wrong: ${data}`)
+          alert(`Sorry, but something went wrong: ${JSON.stringify(data)}`)
         }
       };
     </script>
