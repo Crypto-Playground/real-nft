@@ -1,8 +1,8 @@
 # Real NFT
 
-Query an API endpoint to see if a given wallet address owns (any one of) a given NFT.
+Query an API endpoint to see if a given wallet address owns a given NFT.
 
-The endpoint is `GET /api/:nftName/:address`
+The endpoint is `GET /api/:nftName/:address[/:tokenId]`
 
 Currently supported NFTs include:
 
@@ -12,6 +12,7 @@ Currently supported NFTs include:
 - `sadgirlsbar`
 - `cryptopunks`
 
-For a valid request, the returned JSON data is `{"owns": true|false}`
+Successful requests return data in the form `{"owns": true|false}`
 
-In the future, maybe we'll write an API endpoint that checks whether a given address owns a _specific_ NFT.
+If no `tokenId` is provided, we answer the question "does `address` own _any_ of the given NFT" ("do you own any cryptopunks?"); if a `tokenId` _is_ provided, we answer whether the `address` owns _that specific_ NFT ("do you own cryptopunk #3100?").
+

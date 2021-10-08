@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+  <!-- this whole HTML file is a quick hack. the point is the api, not this UI. -->
   <head>
     <style>
       body {
@@ -21,47 +22,123 @@
       input {
         width: 44ch;
       }
-      
+
       #result {
         font-size: 2em;
         font-weight: bold;
+        color: blue;
       }
     </style>
   </head>
   <body>
-    <h1>NFT Validator</h1>
+    <h1>NFT Ownership Check</h1>
     <div>
       <p>
-        Does address <input type="text" id="address" /> own a
-        <select id="nftName">
-          <option value="cryptopunks">Cryptopunk</option>
-          <option value="bayc">Bored Ape</option>
-          <option value="loot">Loot Box</option>
-          <option value="mayc">Mutant Ape</option>
-          <option value="sadgirlsbar">Sad Girl</option></select
+        Does address <input type="text" id="address" /> own
+        <select id="operation">
+          <option value="any">any</option>
+          <option value="one">a specific</option>
+        </select>
+        <select id="nftName"></select
         >?
       </p>
-      <button id="check">Check if it does...</button>
+      <button id="checkButton">Check Now</button>
       <p id="result"></p>
     </div>
+    <h3>Using the API</h3>
+    <p>To use the API, call <code>/api/:nftName/:address[/:tokenId]</code></p>
+    <p>
+      If successful, the API will return JSON data of the form
+      <code>{"owns": [false|true]}</code>
+    </p>
+    <p>
+      If called without a <code>tokenId</code>, the API will answer whether the
+      given wallet address owns <i>any</i> from an NFT set; otherwise, it will
+      answer whether it owns a <i>specific</i> NFT.
+    </p>
+    <p>Supported NFT Names:</p>
+    <ul id="supportedNames"></ul>
     <script>
-      const button = document.getElementById("check");
-      button.onclick = async (e) => {
+      // grab the necessary DOM elements for our little hacked-together UI
+      const address = document.getElementById("address");
+      const operation = document.getElementById("operation");
+      const nftName = document.getElementById("nftName");
+      const checkButton = document.getElementById("checkButton");
+
+      // currently supported NFT identifiers for the API, along with plural
+      // display names
+      const NFTS = {
+        cryptopunks: { plural: "Cryptopunks", singular: "Cryptopunk" },
+        bayc: { plural: "Bored Apes", singular: "Bored Ape" },
+        loot: { plural: "Loot Boxes", singular: "Loot Box" },
+        mayc: { plural: "Mutant Apes", singular: "Mutant Ape" },
+        sadgirlsbar: { plural: "Sad Girls", singular: "Sad Girl" },
+      };
+
+      // Update the documentation
+      const updateNftDocumentation = () => {
+        const supportedNames = document.getElementById("supportedNames");
+        const items = Object.entries(NFTS).map(([value, names]) => {
+          const item = document.createElement("li");
+          item.innerHTML = `<code>${value}</code> &mdash; ${names.plural}`;
+          return item;
+        });
+        supportedNames.replaceChildren(...items);
+      };
+      updateNftDocumentation();
+
+      // Update the NFT name dropdown to make the sentence read nicely.
+      const updateNftNameOptions = () => {
+        const plural = operation.value === "any";
+        const options = Object.entries(NFTS).map(
+          ([value, names]) =>
+            new Option(
+              plural ? names.plural : names.singular,
+              value,
+              false,
+              value === nftName.value
+            )
+        );
+        console.log(options);
+        nftName.replaceChildren(...options);
+      };
+      updateNftNameOptions();
+
+      // Also update the dropdown any time the operation changes.
+      operation.onchange = (e) => updateNftNameOptions();
+
+      // Invoke our API endpoint when user clicks the button.
+      checkButton.onclick = async (e) => {
         e.preventDefault();
-        const address = document.getElementById("address").value.trim();
-        if (address === "") {
+
+        // validate address
+        const addressValue = address.value.trim();
+        if (addressValue === "") {
+          alert("Please enter an Ethereum address.");
           return;
         }
-        const nftName = document.getElementById("nftName").value;
-        const url = `/api/${nftName}/${address}`;
+
+        // choose our API URL endpoint -- depends on "any" or "one"
+        const nftNameValue = nftName.value;
+        let url = `/api/${nftNameValue}/${addressValue}`;
+        if (operation.value === "one") {
+          tokenValue = prompt("Which token should we verify? (eg: 3100)");
+          if (!tokenValue) {
+            return;
+          }
+          url = `/api/${nftNameValue}/${addressValue}/${tokenValue}`;
+        }
+
+        // invoke the API endpoint
+        result.innerText = "...";
         const response = await fetch(url);
         const data = await response.json();
         if (response.ok) {
           const result = document.getElementById("result");
-          result.innerText = data.owns ? "Yes." : "Nope."
+          result.innerText = data.owns ? "Yes." : "Nope.";
         } else {
-          console.log(data);
-          alert(`Sorry, but something went wrong: ${JSON.stringify(data)}`)
+          console.error(data);
+          alert(`Sorry, but something went wrong: ${JSON.stringify(data)}`);
         }
       };
     </script>
