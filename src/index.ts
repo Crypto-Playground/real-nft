@@ -59,7 +59,7 @@ class ERC721Validator extends NFCValidator {
   }
 
   async ownsToken(address: string, token: string): Promise<boolean> {
-    // call the ERC-821 ownerOf() method on-chain.
+    // call the ERC-721 ownerOf() method on-chain.
     const ownerOf: string = await this.nftContract.ownerOf(token);
     return ownerOf === address;
   }
