@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+      body {
+        padding: 1em;
+        font-family: "Helvetica Neue";
+        font-size: 1.25em;
+      }
+
+      input,
+      select,
+      button {
+        font-size: 1.25em;
+        padding: 0.25em;
+        margin-left: 0.1em;
+        margin-right: 0.1em;
+        border-radius: 0.25em;
+      }
+
+      input {
+        width: 44ch;
+      }
+      
+      #result {
+        font-size: 2em;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>NFT Validator</h1>
+    <div>
+      <p>
+        Does address <input type="text" id="address" /> own a
+        <select id="nftName">
+          <option value="cryptopunks">Cryptopunk</option>
+          <option value="bayc">Bored Ape</option>
+          <option value="loot">Loot Box</option>
+          <option value="mayc">Mutant Ape</option>
+          <option value="sadgirlsbar">Sad Girl</option></select
+        >?
+      </p>
+      <button id="check">Check if it does...</button>
+      <p id="result"></p>
+    </div>
+    <script>
+      const button = document.getElementById("check");
+      button.onclick = async (e) => {
+        e.preventDefault();
+        const address = document.getElementById("address").value.trim();
+        if (address === "") {
+          return;
+        }
+        const nftName = document.getElementById("nftName").value;
+        const url = `/api/${nftName}/${address}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (response.ok) {
+          const result = document.getElementById("result");
+          result.innerText = data.owns ? "Yes." : "Nope."
+        } else {
+          console.log(data);
+          alert(`Sorry, but something went wrong: ${data}`)
+        }
+      };
+    </script>
+  </body>
+</html>
