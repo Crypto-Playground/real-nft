@@ -128,6 +128,12 @@ app.get(
     response: express.Response
   ): Promise<void> => {
     try {
+      // ensure params
+      const { nftName, address } = request.params;
+      if (!nftName || !address) {
+        response.status(400).json({ error: "Invalid parameters" });
+      }
+
       // decide which NFT validator instance to use
       const validator: NFCValidator | undefined =
         VALIDATORS[request.params.nftName];
