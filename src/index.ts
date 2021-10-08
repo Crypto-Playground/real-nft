@@ -65,9 +65,7 @@ class ERC721Validator extends NFCValidator {
   }
 }
 
-/**
- * An NFC validator for cryptopunks, which predate the ERC-721 contract.
- */
+/** An NFC validator for cryptopunks, which predate the ERC-721 specification. */
 class CryptopunksValidator extends NFCValidator {
   ADDRESS = "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb";
 
