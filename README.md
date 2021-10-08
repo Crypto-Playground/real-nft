@@ -15,4 +15,3 @@ Currently supported NFTs include:
 Successful requests return data in the form `{"owns": true|false}`
 
 If no `tokenId` is provided, we answer the question "does `address` own _any_ of the given NFT" ("do you own any cryptopunks?"); if a `tokenId` _is_ provided, we answer whether the `address` owns _that specific_ NFT ("do you own cryptopunk #3100?").
-
