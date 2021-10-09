@@ -150,7 +150,15 @@ class CryptopunksValidator extends NFCValidator {
   async imageURLForToken(token: string): Promise<string | null> {
     // cryptopunks predate ERC-721 and don't support the metadata standard --
     // you have to know where to go!
-    return `https://www.larvalabs.com/public/images/cryptopunks/punk${token}.png`;
+    try {
+      const tokenNumber = Number.parseInt(token);
+      if (tokenNumber >= 1000 && tokenNumber <= 9999) {
+        return `https://www.larvalabs.com/public/images/cryptopunks/punk${token}.png`;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 }
 
