@@ -1,4 +1,5 @@
 import express from "express";
+import fetch from "node-fetch";
 import { ethers } from "ethers";
 
 const app = express();
@@ -29,9 +30,17 @@ abstract class NFCValidator {
    * Return true if the given address owns a specific token associated with this
    * NFC.
    *
-   * For example, ask if Address 0xDEADBEEF owns Cryptopunk #3001.
+   * For example, ask if Address 0xDEADBEEF owns Cryptopunk #3100.
    */
   abstract ownsToken(address: string, token: string): Promise<boolean>;
+
+  /** Return JSON metadata matching the ERC-721 format, if any exists. */
+  abstract metadataForToken(
+    token: string
+  ): Promise<Record<string, unknown> | null>;
+
+  /** Return an image URL, if the NFT is an image. */
+  abstract imageURLForToken(token: string): Promise<string | null>;
 }
 
 /** An NFC validator that works with any ERC-721 compliant NFC smart contract. */
@@ -40,6 +49,7 @@ class ERC721Validator extends NFCValidator {
   ABI = [
     "function balanceOf(address owner) view returns (uint256)",
     "function ownerOf(uint256 tokenId) external view returns (address)",
+    "function tokenURI(uint256 _tokenId) external view returns (string)",
   ];
 
   /** A proxy to the ERC-721 smart contract itself. */
@@ -62,6 +72,31 @@ class ERC721Validator extends NFCValidator {
     // call the ERC-721 ownerOf() method on-chain.
     const ownerOf: string = await this.nftContract.ownerOf(token);
     return ownerOf === address;
+  }
+
+  async metadataForToken(
+    token: string
+  ): Promise<Record<string, unknown> | null> {
+    try {
+      // call the ERC-721 metadata tokenURI() method on-chain
+      const tokenURI: string = await this.nftContract.tokenURI(token);
+      const tokenMetadataResponse = await fetch(tokenURI);
+      const metadata = await tokenMetadataResponse.json();
+      return metadata as Record<string, unknown>;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+
+  async imageURLForToken(token: string): Promise<string | null> {
+    try {
+      const metadata = await this.metadataForToken(token);
+      return (metadata["image"] as string) ?? null;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   }
 }
 
@@ -93,11 +128,29 @@ class CryptopunksValidator extends NFCValidator {
   }
 
   async ownsToken(address: string, token: string): Promise<boolean> {
-    // call the special-purpose punkIndexToAddress() method on-chain.
-    const ownerOf: string = await this.cryptopunksContract.punkIndexToAddress(
-      token
-    );
-    return ownerOf === address;
+    try {
+      // call the special-purpose punkIndexToAddress() method on-chain.
+      const ownerOf: string = await this.cryptopunksContract.punkIndexToAddress(
+        token
+      );
+      return ownerOf === address;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  }
+
+  async metadataForToken(
+    token: string
+  ): Promise<Record<string, unknown> | null> {
+    // cryptopunks predate ERC-721 and don't support the metadata standard
+    return null;
+  }
+
+  async imageURLForToken(token: string): Promise<string | null> {
+    // cryptopunks predate ERC-721 and don't support the metadata standard --
+    // you have to know where to go!
+    return `https://www.larvalabs.com/public/images/cryptopunks/punk${token}.png`;
   }
 }
 
@@ -174,7 +227,8 @@ app.get(
 
       // Invoke the validator
       const owns = await validator.ownsToken(address, token);
-      response.status(200).json({ owns });
+      const imageURL = await validator.imageURLForToken(token);
+      response.status(200).json({ owns, imageURL });
     } catch (error) {
       response.status(500).json({ error });
     }

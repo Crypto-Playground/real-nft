@@ -28,33 +28,51 @@
         font-weight: bold;
         color: blue;
       }
+
+      #nft-image {
+        min-height: 128px;
+        min-width: 128px;
+        max-height: 384px;
+        max-width: 384px;
+        object-fit: contain; 
+      }
     </style>
   </head>
   <body>
     <h1>NFT Ownership Check</h1>
     <div>
       <p>
-        Does address <input type="text" id="address" value="0x7b8961F67382C51C389726667ef7dD7CF95FEfd3" /> own
+        Does address
+        <input
+          type="text"
+          id="address"
+          value="0x7b8961F67382C51C389726667ef7dD7CF95FEfd3"
+        />
+        own
         <select id="operation">
-          <option value="any">any</option>
+          <option value="any" selected>any</option>
           <option value="one">a specific</option>
         </select>
         <select id="nftName"></select
         >?
       </p>
       <button id="checkButton">Check Now</button>
-      <p id="result"></p>
+      <div id="result"></div>
     </div>
     <h3>Using the API</h3>
     <p>To use the API, call <code>/api/:nftName/:address[/:tokenId]</code></p>
     <p>
       If successful, the API will return JSON data of the form
-      <code>{"owns": [false|true]}</code>
+      <code>{"owns": [false|true], &lt;"imageURL": ...&gt;}</code>
     </p>
     <p>
       If called without a <code>tokenId</code>, the API will answer whether the
       given wallet address owns <i>any</i> from an NFT set; otherwise, it will
-      answer whether it owns a <i>specific</i> NFT.
+      answer whether it owns a <i>specific</i> NFT. If possible, it will also return
+      the associated <code>imageURL</code> for the NFT.
+    <p>
+    <p>
+      Examples: try <code>0xb7b78C45036D5a089Ff85d39a0e0836037D1Dc52</code> with sad girl #1, or <code>0x7b8961F67382C51C389726667ef7dD7CF95FEfd3</code> with cryptopunk #3100.
     </p>
     <p>Supported NFT Names:</p>
     <ul id="supportedNames"></ul>
@@ -99,7 +117,6 @@
               value === nftName.value
             )
         );
-        console.log(options);
         nftName.replaceChildren(...options);
       };
       updateNftNameOptions();
@@ -120,9 +137,10 @@
 
         // choose our API URL endpoint -- depends on "any" or "one"
         const nftNameValue = nftName.value;
+        const nftNameDescription = NFTS[nftNameValue].singular;
         let url = `/api/${nftNameValue}/${addressValue}`;
         if (operation.value === "one") {
-          tokenValue = prompt("Which token should we verify? (eg: 3100)");
+          tokenValue = prompt(`Which ${nftNameDescription} token should we check? (eg: 3100)`);
           if (!tokenValue) {
             return;
           }
@@ -134,8 +152,14 @@
         const response = await fetch(url);
         const data = await response.json();
         if (response.ok) {
+          console.log(data);
           const result = document.getElementById("result");
-          result.innerText = data.owns ? "Yes." : "Nope.";
+          const yesNope = data.owns ? "Yes." : "Nope.";
+          if (data.imageURL) {
+            result.innerHTML = `${yesNope} <img src="${data.imageURL}" id="nft-image" />`;
+          } else {
+            result.innerHTML = yesNope;
+          }
         } else {
           console.error(data);
           alert(`Sorry, but something went wrong: ${JSON.stringify(data)}`);
